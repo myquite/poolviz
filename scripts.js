@@ -40,16 +40,26 @@ const ctx = canvas.getContext('2d', { alpha: true });
 let scale = 14; // px per inch — larger by default
 function resizeCanvas() {
   // Fit to available viewport while preserving aspect ratio (2:1)
-  const parentW = canvas.parentElement.clientWidth - 12;
+  const parentW = canvas.parentElement.clientWidth;
   const viewportH = window.innerHeight;
   const toolbarH = (document.getElementById('toolbar')?.getBoundingClientRect().height) || 56;
-  const availableH = Math.max(200, viewportH - toolbarH - 8);
+  // Expose toolbar height to CSS so containers can size around it
+  document.documentElement.style.setProperty('--toolbar-h', `${toolbarH}px`);
+  // Account for vertical padding on the stage wrapper so canvas fits above footer
+  const stageEl = canvas.closest('.stage');
+  let stagePadV = 0;
+  if (stageEl) {
+    const cs = getComputedStyle(stageEl);
+    stagePadV = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  }
+  const availableH = Math.max(200, viewportH - toolbarH - stagePadV);
 
   const pxPerInWidth = parentW / TABLE_LEN;
   const pxPerInHeight = availableH / TABLE_WID;
   const pxPerIn = Math.min(pxPerInWidth, pxPerInHeight);
 
-  scale = Math.max(6, pxPerIn); // never too small to render
+  // Ensure we always fit above the footer; allow very small scales if needed
+  scale = Math.min(pxPerInHeight, Math.max(4, pxPerIn));
   canvas.width = Math.round(TABLE_LEN * scale);
   canvas.height = Math.round(TABLE_WID * scale);
   draw();
