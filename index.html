@@ -7,8 +7,17 @@
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <h1>Pool Break Practice — Visualizer</h1>
+  
+
+  <main>
+    <section class="stage">
+      <div id="board">
+      <canvas id="table" width="1400" height="700" aria-label="Pool table visualization"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <div id="toolbar" role="toolbar" aria-label="Controls">
     <div class="controls">
       <label>Game
         <select id="mode">
@@ -19,17 +28,9 @@
       <label>Seed
         <input id="seed" type="number" step="1" placeholder="auto" />
       </label>
-      <button id="btnNext">New Random Break (N)</button>
+      <button id="btnNext">New (N)</button>
     </div>
-  </header>
-
-  <main>
-    <section class="stage">
-      <div id="board">
-      <canvas id="table" width="1400" height="700" aria-label="Pool table visualization"></canvas>
-      </div>
-    </section>
-  </main>
+  </div>
 
 <script src="scripts.js"></script>
 </body>

@@ -9,7 +9,7 @@ const FOOT_RAIL_OFFSET = 22;               // approx foot spot distance from foo
 const FOOT_SPOT_X = TABLE_LEN - FOOT_RAIL_OFFSET;
 const CENTER_Y   = TABLE_WID/2;
 const POCKET_R   = 2.25;   // pocket radius (inches) to match drawing
-const EDGE_CLEARANCE = BALL_R + 1.0; // keep ball centers well off the cushions
+const EDGE_CLEARANCE = BALL_R + 0.25; // allow close-to-rail but never on the rail
 const MOBILE_BREAKPOINT_PX = 768; // match CSS breakpoint for mobile
 
 /* ---------- Color palette for balls (approximate) ---------- */
@@ -36,20 +36,20 @@ function randomSeed() { if (crypto?.getRandomValues) { const a = new Uint32Array
 
 /* ---------- Canvas setup ---------- */
 const canvas = document.getElementById('table');
-const ctx = canvas.getContext('2d', { alpha: false });
+const ctx = canvas.getContext('2d', { alpha: true });
 let scale = 14; // px per inch — larger by default
 function resizeCanvas() {
   // Fit to available viewport while preserving aspect ratio (2:1)
   const parentW = canvas.parentElement.clientWidth - 12;
   const viewportH = window.innerHeight;
-  const headerH = $header ? $header.getBoundingClientRect().height : 0;
-  const availableH = Math.max(200, viewportH - headerH - 16);
+  const toolbarH = (document.getElementById('toolbar')?.getBoundingClientRect().height) || 56;
+  const availableH = Math.max(200, viewportH - toolbarH - 8);
 
   const pxPerInWidth = parentW / TABLE_LEN;
   const pxPerInHeight = availableH / TABLE_WID;
   const pxPerIn = Math.min(pxPerInWidth, pxPerInHeight);
 
-  scale = pxPerIn;
+  scale = Math.max(6, pxPerIn); // never too small to render
   canvas.width = Math.round(TABLE_LEN * scale);
   canvas.height = Math.round(TABLE_WID * scale);
   draw();
@@ -222,7 +222,7 @@ function drawTable() {
 
   // Diamonds positioned on the wood rails (not cushions)
   const diamondColor = "#ffffff";
-  const ds = Math.max(6, Math.round(railPx * 0.55));
+  const ds = Math.max(4, Math.round(railPx * 0.4));
   const topRailY = Math.round(tly / 2);
   const bottomRailY = Math.round(canvas.height - tly / 2);
   const leftRailX = Math.round(tlx / 2);
@@ -301,15 +301,29 @@ function drawBall(xIn, yIn, num) {
   // Number circle (hidden on small/mobile screens for clarity)
   const isSmallScreen = window.innerWidth <= MOBILE_BREAKPOINT_PX;
   if (num !== 0 && state.showNumbers && !isSmallScreen){
-    const ncR = r * 0.46;
+    const ncR = r * 0.58; // larger white backdrop for readability
+    // white disk with dark outline
     ctx.fillStyle = "#fff";
     ctx.beginPath(); ctx.arc(cx, cy, ncR, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#222"; ctx.lineWidth = Math.max(1, r*0.06); ctx.stroke();
-    ctx.fillStyle = "#000";
-    const fontPx = Math.max(11, Math.floor(r * 0.95));
-    ctx.font = `bold ${fontPx}px system-ui, sans-serif`;
+    ctx.strokeStyle = "#111"; ctx.lineWidth = Math.max(1.2, r*0.10); ctx.stroke();
+
+    // heavy, larger number with stroke + slight shadow
+    const label = String(num);
+    const fontPx = Math.max(18, Math.floor(r * 1.20));
+    ctx.font = `900 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif`;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(String(num), cx, cy + 0.5);
+    // soft shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.35)';
+    ctx.shadowBlur = 2; ctx.shadowOffsetY = 1;
+    // draw white stroke around glyph to sharpen edges against colored balls
+    ctx.lineWidth = Math.max(1, Math.floor(fontPx * 0.10));
+    ctx.strokeStyle = '#fff';
+    ctx.strokeText(label, cx, cy + 0.5);
+    // black fill
+    ctx.fillStyle = '#000';
+    ctx.fillText(label, cx, cy + 0.5);
+    ctx.restore();
   }
 
   // Cue ball spin dot
@@ -443,7 +457,7 @@ function isNonOverlapping(x, y, placedBalls){
   if (isInAnyPocket(x, y)) return false;
   for(const b of placedBalls){
     const dx = x - b.x, dy = y - b.y;
-    if (Math.hypot(dx, dy) < BALL_D + 0.05) return false;
+    if (Math.hypot(dx, dy) < BALL_D + 0.02) return false; // never overlap, allow tight racks
   }
   return true;
 }
@@ -631,23 +645,28 @@ document.addEventListener('keydown', (e) => {
 
 // rotate board features removed
 
-// Auto-hide header on scroll direction
-let lastScrollY = window.scrollY;
-let headerHidden = false;
-window.addEventListener('scroll', ()=>{
-  const current = window.scrollY;
-  if (current > lastScrollY + 10 && !headerHidden){
-    $header?.classList.add('hidden'); headerHidden = true;
-  } else if (current < lastScrollY - 10 && headerHidden){
-    $header?.classList.remove('hidden'); headerHidden = false;
-  }
-  lastScrollY = current;
-}, { passive:true });
+// Menu toggle (default collapsed, tab hangs down)
+if ($btnMenu){
+  const isCollapsed = ()=> $header?.classList.contains('collapsed');
+  const syncAria = ()=>{ if ($btnMenu) $btnMenu.setAttribute('aria-expanded', isCollapsed() ? 'false' : 'true'); };
+  $btnMenu.addEventListener('click', ()=>{
+    if (isCollapsed()){ $header.classList.remove('collapsed'); } else { $header?.classList.add('collapsed'); }
+    syncAria();
+    // Recompute canvas height minus header when shown/hidden
+    resizeCanvas();
+  });
+  syncAria();
+}
 
 /* ---------- Boot ---------- */
 loadFromURL();
-resizeCanvas();
-buildScenario(); // initial
+const init = () => { resizeCanvas(); buildScenario({ keepRack:false, keepCue:false }); };
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  requestAnimationFrame(init);
+} else {
+  window.addEventListener('DOMContentLoaded', () => requestAnimationFrame(init));
+}
 
-// Auto-hide header shortly after load to focus the table
-setTimeout(()=>{ $header?.classList.add('hidden'); }, 800);
+// Ensure header starts collapsed and aria reflects state
+if ($header) $header.classList.add('collapsed');
+if ($btnMenu) $btnMenu.setAttribute('aria-expanded','false');

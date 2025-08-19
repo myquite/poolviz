@@ -12,6 +12,7 @@
   --btn-txt:#e5e7eb;
   --chip:#0f172a;
   --danger:#ef4444;
+  --tab-h:36px;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -19,12 +20,7 @@ body{
   margin:0; font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
   color:var(--ink); background:#333;
 }
-header{
-  padding:12px 16px; background:#0b1220; border-bottom:1px solid #1f2937;
-  display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:space-between;
-  position:sticky; top:0; z-index:10; transition:transform .25s ease;
-}
-header.hidden{ transform:translateY(-100%); }
+header{ display:none }
 header h1{font-size:18px; margin:0 8px 0 0; font-weight:700}
 .controls{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
 .controls label{display:flex; align-items:center; gap:8px; padding:6px 8px; background:#0f172a; border:1px solid #1f2937; border-radius:8px; color:var(--ink)}
@@ -41,18 +37,35 @@ button.secondary{background:transparent; color:var(--ink); border:1px solid #374
 button:active{transform:translateY(1px)}
 .controls .flex{display:none}
 main{
-  display:block; padding:12px;
+  display:block; padding:0;
 }
 .stage{
   background-color: silver; border:1px solid #2f2f2f; border-radius:12px; padding:12px;
 }
-#board{width:100%; max-width:1800px; margin:0 auto; display:flex; justify-content:center}
-canvas{width:100%; height:auto; display:block; border-radius:12px; background:var(--felt); box-shadow:0 20px 60px rgba(0,0,0,.55);}
+#board{width:100%; max-width:1800px; margin:0 auto; display:flex; justify-content:center; align-items:center; min-height:calc(100vh - 56px); overflow:hidden;} 
+canvas{width:100%; height:auto; display:block; border-radius:12px; background:var(--felt); box-shadow:0 20px 60px rgba(0,0,0,.55);} 
+/* Bottom toolbar */
+#toolbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:15;
+  padding:8px 12px; background:#0b1220dd; border-top:1px solid #1f2937; backdrop-filter:blur(6px);
+  display:flex; justify-content:center;
+}
+#toolbar .controls{ gap:8px }
 
 /* Orientation controls for small screens */
 @media (max-width: 768px){
   body{font-size:13px}
 }
+
+/* Menu tab attached to header bottom */
+.menu-tab{
+  position:absolute; left:12px; bottom:calc(-1 * var(--tab-h) + 6px); z-index:20;
+  width:44px; height:var(--tab-h); border-radius:0 0 10px 10px;
+  display:flex; align-items:center; justify-content:center;
+  background:#111827; color:#e5e7eb; border:1px solid #374151; border-top:none;
+  box-shadow:0 8px 20px rgba(0,0,0,.35);
+}
+.menu-tab:active{ transform:translateY(1px) }
 .panel{display:none}
 .row{display:flex; align-items:center; justify-content:space-between; gap:8px}
 .meta{display:grid; grid-template-columns:1fr 1fr; gap:8px}
