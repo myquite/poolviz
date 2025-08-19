@@ -110,56 +110,136 @@ function playToPxY(yIn){ const { originY, innerHeightPx } = getPlayInsets(); ret
 function drawTable() {
   // Rails (wood)
   const railColor = getComputedStyle(document.documentElement).getPropertyValue('--rail');
+  const railDark = getComputedStyle(document.documentElement).getPropertyValue('--rail-dark');
   const feltColor = getComputedStyle(document.documentElement).getPropertyValue('--felt');
   const feltDark = getComputedStyle(document.documentElement).getPropertyValue('--felt-dark');
   const { railPx, cushionPx, originX, originY, innerWidthPx, innerHeightPx } = getPlayInsets();
 
   // Background rails
-  ctx.fillStyle = railColor;
+  const railGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  railGrad.addColorStop(0, railColor);
+  railGrad.addColorStop(1, railDark);
+  ctx.fillStyle = railGrad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Region inside wood rails
   const tlx = railPx, tly = railPx, tw = canvas.width - railPx * 2, th = canvas.height - railPx * 2;
 
-  // Cushions
-  ctx.fillStyle = feltDark;
-  ctx.fillRect(tlx, tly, tw, cushionPx);
-  ctx.fillRect(tlx, tly + th - cushionPx, tw, cushionPx);
-  ctx.fillRect(tlx, tly, cushionPx, th);
-  ctx.fillRect(tlx + tw - cushionPx, tly, cushionPx, th);
+  // Metal corner castings
+  const castingW = Math.round(railPx * 1.2), castingH = Math.round(railPx * 1.2);
+  ctx.fillStyle = '#d5d7db';
+  ctx.fillRect(0, 0, castingW, castingH); // top-left
+  ctx.fillRect(canvas.width - castingW, 0, castingW, castingH); // top-right
+  ctx.fillRect(0, canvas.height - castingH, castingW, castingH); // bottom-left
+  ctx.fillRect(canvas.width - castingW, canvas.height - castingH, castingW, castingH); // bottom-right
 
-  // Playable felt
-  ctx.fillStyle = feltColor;
-  ctx.fillRect(originX, originY, innerWidthPx, innerHeightPx);
-
-  // Pockets (simple circles)
+  // Precompute pocket centers for shaping
   const pocketR = toPx(2.25);
   const pockets = [
     [tlx, tly], [tlx + tw / 2, tly - 2], [tlx + tw, tly],
     [tlx, tly + th], [tlx + tw / 2, tly + th + 2], [tlx + tw, tly + th]
   ];
+
+  // Cushions (inner bumpers) with rounded cut-outs near pockets
+  ctx.save();
+  ctx.fillStyle = feltDark;
+  // top & bottom bands
+  ctx.fillRect(tlx, tly, tw, cushionPx);
+  ctx.fillRect(tlx, tly + th - cushionPx, tw, cushionPx);
+  // left & right bands
+  ctx.fillRect(tlx, tly, cushionPx, th);
+  ctx.fillRect(tlx + tw - cushionPx, tly, cushionPx, th);
+  // carve arcs to mimic bumper taper into pockets
+  ctx.globalCompositeOperation = 'destination-out';
+  const carveR = pocketR + cushionPx * 0.7;
+  for (const [px, py] of pockets){
+    ctx.beginPath();
+    ctx.arc(px, py, carveR, 0, Math.PI*2);
+    ctx.fill();
+  }
+  // bevel cushions at corners
+  const b = cushionPx * 1.3;
+  const c = cushionPx * 0.5;
+  // top-left
+  ctx.beginPath();
+  ctx.moveTo(tlx, tly);
+  ctx.lineTo(tlx + b, tly + c);
+  ctx.lineTo(tlx + c, tly + b);
+  ctx.closePath();
+  ctx.fill();
+  // top-right
+  ctx.beginPath();
+  ctx.moveTo(tlx + tw, tly);
+  ctx.lineTo(tlx + tw - b, tly + c);
+  ctx.lineTo(tlx + tw - c, tly + b);
+  ctx.closePath();
+  ctx.fill();
+  // bottom-left
+  ctx.beginPath();
+  ctx.moveTo(tlx, tly + th);
+  ctx.lineTo(tlx + c, tly + th - b);
+  ctx.lineTo(tlx + b, tly + th - c);
+  ctx.closePath();
+  ctx.fill();
+  // bottom-right
+  ctx.beginPath();
+  ctx.moveTo(tlx + tw, tly + th);
+  ctx.lineTo(tlx + tw - c, tly + th - b);
+  ctx.lineTo(tlx + tw - b, tly + th - c);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Playable felt with subtle gradient + vignette
+  const feltGrad = ctx.createLinearGradient(originX, originY, originX + innerWidthPx, originY + innerHeightPx);
+  feltGrad.addColorStop(0, feltColor);
+  feltGrad.addColorStop(1, feltDark);
+  ctx.fillStyle = feltGrad;
+  ctx.fillRect(originX, originY, innerWidthPx, innerHeightPx);
+  // Vignette
+  const rg = ctx.createRadialGradient(originX + innerWidthPx*0.5, originY + innerHeightPx*0.5, Math.min(innerWidthPx, innerHeightPx)*0.2,
+                                      originX + innerWidthPx*0.5, originY + innerHeightPx*0.5, Math.max(innerWidthPx, innerHeightPx)*0.8);
+  rg.addColorStop(0, 'rgba(0,0,0,0)');
+  rg.addColorStop(1, 'rgba(0,0,0,0.25)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(originX, originY, innerWidthPx, innerHeightPx);
+
+  // Pockets (simple circles with rim)
   ctx.save();
   ctx.fillStyle = "#0c0c0c";
   for (const [px, py] of pockets) {
     ctx.beginPath();
     ctx.arc(px, py, pocketR, 0, Math.PI * 2);
     ctx.fill();
+    // rim
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = Math.max(2, Math.round(cushionPx * 0.25));
+    ctx.beginPath();
+    ctx.arc(px, py, pocketR - ctx.lineWidth*0.5, 0, Math.PI*2);
+    ctx.stroke();
   }
   ctx.restore();
 
-  // Diamonds positioned on cushion centers
-  const diamondColor = "#e8edf3";
-  const ds = Math.max(4, Math.round(toPx(0.35)));
-  const topY = tly + cushionPx / 2;
-  const botY = tly + th - cushionPx / 2;
-  const leftX = tlx + cushionPx / 2;
-  const rightX = tlx + tw - cushionPx / 2;
+  // Diamonds positioned on the wood rails (not cushions)
+  const diamondColor = "#ffffff";
+  const ds = Math.max(6, Math.round(railPx * 0.55));
+  const topRailY = Math.round(tly / 2);
+  const bottomRailY = Math.round(canvas.height - tly / 2);
+  const leftRailX = Math.round(tlx / 2);
+  const rightRailX = Math.round(canvas.width - tlx / 2);
   const topXs = [tlx + tw * 1/8, tlx + tw * 3/8, tlx + tw * 5/8, tlx + tw * 7/8];
   const sideYs = [tly + th * 1/4, tly + th * 2/4, tly + th * 3/4];
-  for (const x of topXs) drawDiamond(x, topY, ds, diamondColor);
-  for (const x of topXs) drawDiamond(x, botY, ds, diamondColor);
-  for (const y of sideYs) drawDiamond(leftX, y, ds, diamondColor);
-  for (const y of sideYs) drawDiamond(rightX, y, ds, diamondColor);
+  for (const x of topXs) drawDiamond(x, topRailY, ds, diamondColor);
+  for (const x of topXs) drawDiamond(x, bottomRailY, ds, diamondColor);
+  for (const y of sideYs) drawDiamond(leftRailX, y, ds, diamondColor);
+  for (const y of sideYs) drawDiamond(rightRailX, y, ds, diamondColor);
+
+  // Subtle inner border line to separate cushion and felt
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(originX + 0.5, originY + 0.5, innerWidthPx - 1, innerHeightPx - 1);
+  ctx.restore();
 
   // Head string (dotted) inside playable
   ctx.save();
@@ -178,6 +258,10 @@ function drawTable() {
   ctx.fillStyle = "rgba(255,255,255,.85)";
   ctx.beginPath();
   ctx.arc(playToPxX(FOOT_SPOT_X), playToPxY(CENTER_Y), 3, 0, Math.PI * 2);
+  ctx.fill();
+  // Head spot mark (symmetric)
+  ctx.beginPath();
+  ctx.arc(playToPxX(FOOT_RAIL_OFFSET), playToPxY(CENTER_Y), 3, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
