@@ -36,11 +36,11 @@ function randomSeed() { if (crypto?.getRandomValues) { const a = new Uint32Array
 /* ---------- Canvas setup ---------- */
 const canvas = document.getElementById('table');
 const ctx = canvas.getContext('2d', { alpha: false });
-let scale = 12; // px per inch (responsive calc below)
+let scale = 14; // px per inch — larger by default
 function resizeCanvas() {
   // Keep a pleasant aspect, max width based on container
-  const parentW = canvas.parentElement.clientWidth - 24;
-  const targetW = Math.min(1400, Math.max(800, parentW));
+  const parentW = canvas.parentElement.clientWidth - 12;
+  const targetW = Math.min(1800, Math.max(900, parentW));
   const pxPerIn = targetW / TABLE_LEN;
   scale = pxPerIn;
   canvas.width = Math.round(TABLE_LEN * scale);
@@ -66,7 +66,6 @@ let state = {
   rng: mulberry32(randomSeed()),
   lockRack: false,
   lockCue: false,
-  showLines: true,
   showNumbers: true,
   balls: [],         // [{num,x,y}]
   cue: { x: 0, y: 0 },
@@ -77,19 +76,7 @@ let state = {
 
 /* ---------- UI elements ---------- */
 const $mode = document.getElementById('mode');
-const $seed = document.getElementById('seed');
-const $lockRack = document.getElementById('lockRack');
-const $lockCue  = document.getElementById('lockCue');
-const $showLines = document.getElementById('showLines');
-const $showNumbers = document.getElementById('showNumbers');
 const $btnNext = document.getElementById('btnNext');
-const $btnCopy = document.getElementById('btnCopy');
-
-const $tagMode = document.getElementById('tagMode');
-const $cuePos  = document.getElementById('cuePos');
-const $aim     = document.getElementById('aim');
-const $speed   = document.getElementById('speed');
-const $spin    = document.getElementById('spin');
 
 /* ---------- Helpers ---------- */
 const toPx = (inches) => inches * scale;
@@ -248,35 +235,12 @@ function drawBall(xIn, yIn, num) {
   ctx.restore();
 }
 
-function drawAim() {
-  if (!state.showLines) return;
-  const { originX, originY } = getPlayInsets();
-  const cue = state.cue, aim = state.aimPoint;
-  ctx.save();
-  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--line').trim();
-  ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
-  ctx.beginPath();
-  ctx.moveTo(playToPxX(cue.x), playToPxY(cue.y));
-  ctx.lineTo(playToPxX(aim.x), playToPxY(aim.y));
-  ctx.stroke();
-  // small target crosshair
-  ctx.setLineDash([]);
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(playToPxX(aim.x) - 6, playToPxY(aim.y));
-  ctx.lineTo(playToPxX(aim.x) + 6, playToPxY(aim.y));
-  ctx.moveTo(playToPxX(aim.x), playToPxY(aim.y) - 6);
-  ctx.lineTo(playToPxX(aim.x), playToPxY(aim.y) + 6);
-  ctx.stroke();
-  ctx.restore();
-}
+// Aim line removed for simplified UI
 
 function draw() {
   drawTable();
   // balls except cue first, then cue on top
   for (const b of state.balls) { if (b.num !== 0) drawBall(b.x, b.y, b.num) }
-  // aim after balls so it sits above rack
-  drawAim();
   // cue ball last
   drawBall(state.cue.x, state.cue.y, 0);
 }
@@ -498,15 +462,7 @@ function randomSpin(rng) {
 /* ---------- Scenario generation ---------- */
 function buildScenario({ keepRack = false, keepCue = false } = {}) {
   // Seed handling
-  let seedVal = $seed.value.trim();
-  if (seedVal === "" || isNaN(Number(seedVal))) {
-    // if both rack & cue locked, keep same rng; else reseed for variety
-    if (!(keepRack && keepCue)) {
-      state.seed = randomSeed();
-    }
-  } else {
-    state.seed = Number(seedVal) >>> 0;
-  }
+  state.seed = randomSeed();
   state.rng = mulberry32(hashSeed(state.seed));
 
   // Mode
@@ -535,13 +491,7 @@ function buildScenario({ keepRack = false, keepCue = false } = {}) {
 }
 
 function updateInfo() {
-  $tagMode.textContent = (state.mode === "8") ? "8-Ball" : "9-Ball";
-  $cuePos.textContent = `${state.cue.x.toFixed(2)}", ${state.cue.y.toFixed(2)}"`;
-  const target = pickNextShotTarget(state.mode, state.balls);
-  const dist = Math.hypot(target.x - state.cue.x, target.y - state.cue.y);
-  $aim.textContent = `Target: #${target.num} at ${dist.toFixed(2)}"`;
-  $speed.textContent = `${state.speedMph} mph  •  ${state.speedMps} m/s`;
-  $spin.textContent  = state.spin.label + (state.spin.label === "Center" ? "" : " (tip offset)");
+  // UI summary removed in simplified layout
 }
 
 /* ---------- URL share / parse ---------- */
@@ -555,30 +505,18 @@ function updateURL() {
 function loadFromURL() {
   const q = new URLSearchParams(location.search);
   const mode = q.get("mode");
-  const seed = q.get("seed");
   if (mode && (mode === "8" || mode === "9")) $mode.value = mode;
-  if (seed && !isNaN(Number(seed))) $seed.value = String(Number(seed) >>> 0);
 }
 
 /* ---------- Events ---------- */
 $btnNext.addEventListener('click', () => {
-  buildScenario({ keepRack: $lockRack.checked, keepCue: $lockCue.checked });
-});
-$btnCopy.addEventListener('click', async () => {
-  const url = updateURL();
-  try { await navigator.clipboard.writeText(url); $btnCopy.textContent = "Link copied!"; setTimeout(() => { $btnCopy.textContent = "Copy shareable link" }, 1300); } catch(e) { alert(url); }
+  buildScenario({ keepRack: false, keepCue: false });
 });
 $mode.addEventListener('change', () => buildScenario({ keepRack: false, keepCue: false }));
-$seed.addEventListener('change', () => buildScenario({ keepRack: false, keepCue: false }));
-$lockRack.addEventListener('change', () => {});
-$lockCue.addEventListener('change', () => {});
-$showLines.addEventListener('change', () => { state.showLines = $showLines.checked; draw(); });
-$showNumbers.addEventListener('change', () => { state.showNumbers = $showNumbers.checked; draw(); });
 
 document.addEventListener('keydown', (e) => {
   if (e.key === "n" || e.key === "N") { e.preventDefault(); $btnNext.click(); }
-  if (e.key === "l" || e.key === "L") { $showLines.checked = !$showLines.checked; state.showLines = $showLines.checked; draw(); }
-  if (e.key === "b" || e.key === "B") { $showNumbers.checked = !$showNumbers.checked; state.showNumbers = $showNumbers.checked; draw(); }
+  if (e.key === "b" || e.key === "B") { state.showNumbers = !state.showNumbers; draw(); }
 });
 
 /* ---------- Boot ---------- */
