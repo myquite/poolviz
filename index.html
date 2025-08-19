@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pool Break Practice — Visualizer</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Pool Break Practice — Visualizer</h1>
+    <div class="controls">
+      <label>Game
+        <select id="mode">
+          <option value="8">8-Ball</option>
+          <option value="9">9-Ball</option>
+        </select>
+      </label>
+      <label>Seed
+        <input id="seed" type="number" step="1" placeholder="auto" />
+      </label>
+      <label class="flex"><input id="lockRack" type="checkbox" /> Lock rack</label>
+      <label class="flex"><input id="lockCue" type="checkbox" /> Lock cue ball</label>
+      <label class="flex"><input id="showLines" type="checkbox" checked /> Show aim line</label>
+      <label class="flex"><input id="showNumbers" type="checkbox" checked /> Show ball numbers</label>
+      <button id="btnNext">New Random Break (N)</button>
+      <button id="btnCopy" class="secondary">Copy shareable link</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="stage">
+      <canvas id="table" width="1400" height="700" aria-label="Pool table visualization"></canvas>
+    </section>
+
+    <aside class="panel">
+      <div class="row"><strong>Scenario</strong> <span class="tag" id="tagMode">8-Ball</span></div>
+      <div class="meta">
+        <div><strong>Cue ball (in):</strong><br><span id="cuePos" class="muted">—</span></div>
+        <div><strong>Aim offset:</strong><br><span id="aim" class="muted">—</span></div>
+        <div><strong>Suggested speed:</strong><br><span id="speed" class="muted">—</span></div>
+        <div><strong>Tip offset (english):</strong><br><span id="spin" class="muted">—</span></div>
+      </div>
+      <div class="row"><span class="muted small">Head string is at 25" from head rail. Cue ball is randomized anywhere in the kitchen.</span></div>
+      <div class="hr"></div>
+      <div>
+        <strong>Shortcuts</strong><br>
+        <span class="kbd">N</span> next drill • <span class="kbd">L</span> toggle lines • <span class="kbd">B</span> toggle numbers
+      </div>
+      <div class="hr"></div>
+      <div class="help">
+        <strong>How to use</strong><br>
+        1) Pick game type (8- or 9-ball). 2) Click <em>New Random Break</em> to generate a drill: a rack, a legal cue-ball position in the kitchen, a cut-break aim suggestion, a tip offset, and a target speed. 3) Optional: set a <em>Seed</em> for reproducible drills or lock parts you want to keep.<br><br>
+        Share the exact scenario with the link button — it encodes mode & seed.
+      </div>
+      <div class="hr"></div>
+      <div class="small muted">Built with plain HTML/CSS/JS, Canvas, and a tiny seeded PRNG for reproducible setups.</div>
+    </aside>
+  </main>
+
+<script src="scripts.js"></script>
+</body>
+</html>
