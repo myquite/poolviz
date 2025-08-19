@@ -76,6 +76,7 @@ let state = {
 
 /* ---------- UI elements ---------- */
 const $mode = document.getElementById('mode');
+const $seed = document.getElementById('seed');
 const $btnNext = document.getElementById('btnNext');
 
 /* ---------- Helpers ---------- */
@@ -460,9 +461,20 @@ function randomSpin(rng) {
 }
 
 /* ---------- Scenario generation ---------- */
-function buildScenario({ keepRack = false, keepCue = false } = {}) {
-  // Seed handling
-  state.seed = randomSeed();
+function buildScenario({ keepRack = false, keepCue = false, reseed = false } = {}) {
+  // Seed handling — on reseed always generate new; otherwise read from input if present
+  if (reseed) {
+    state.seed = randomSeed();
+    if ($seed) $seed.value = String(state.seed >>> 0);
+  } else {
+    const seedVal = ($seed?.value || "").trim();
+    if (seedVal === "" || isNaN(Number(seedVal))) {
+      state.seed = randomSeed();
+      if ($seed) $seed.value = String(state.seed >>> 0);
+    } else {
+      state.seed = Number(seedVal) >>> 0;
+    }
+  }
   state.rng = mulberry32(hashSeed(state.seed));
 
   // Mode
@@ -506,13 +518,16 @@ function loadFromURL() {
   const q = new URLSearchParams(location.search);
   const mode = q.get("mode");
   if (mode && (mode === "8" || mode === "9")) $mode.value = mode;
+  const seed = q.get("seed");
+  if (seed && !isNaN(Number(seed)) && $seed) $seed.value = String(Number(seed) >>> 0);
 }
 
 /* ---------- Events ---------- */
 $btnNext.addEventListener('click', () => {
-  buildScenario({ keepRack: false, keepCue: false });
+  buildScenario({ keepRack: false, keepCue: false, reseed: true });
 });
 $mode.addEventListener('change', () => buildScenario({ keepRack: false, keepCue: false }));
+$seed.addEventListener('change', () => buildScenario({ keepRack: false, keepCue: false }));
 
 document.addEventListener('keydown', (e) => {
   if (e.key === "n" || e.key === "N") { e.preventDefault(); $btnNext.click(); }
