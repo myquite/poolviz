@@ -10,6 +10,7 @@ const FOOT_SPOT_X = TABLE_LEN - FOOT_RAIL_OFFSET;
 const CENTER_Y   = TABLE_WID/2;
 const POCKET_R   = 2.25;   // pocket radius (inches) to match drawing
 const EDGE_CLEARANCE = BALL_R + 1.0; // keep ball centers well off the cushions
+const MOBILE_BREAKPOINT_PX = 768; // match CSS breakpoint for mobile
 
 /* ---------- Color palette for balls (approximate) ---------- */
 const COLORS = {
@@ -213,8 +214,9 @@ function drawBall(xIn, yIn, num) {
   ctx.lineWidth = Math.max(1, r * 0.08);
   ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
 
-  // Number circle
-  if (num !== 0 && state.showNumbers){
+  // Number circle (hidden on small/mobile screens for clarity)
+  const isSmallScreen = window.innerWidth <= MOBILE_BREAKPOINT_PX;
+  if (num !== 0 && state.showNumbers && !isSmallScreen){
     const ncR = r * 0.46;
     ctx.fillStyle = "#fff";
     ctx.beginPath(); ctx.arc(cx, cy, ncR, 0, Math.PI * 2); ctx.fill();
