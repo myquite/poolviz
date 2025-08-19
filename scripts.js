@@ -85,8 +85,6 @@ let state = {
 const $mode = document.getElementById('mode');
 const $seed = document.getElementById('seed');
 const $btnNext = document.getElementById('btnNext');
-const $btnRotate = document.getElementById('btnRotate');
-const $btnMobileLandscape = document.getElementById('btnMobileLandscape');
 const $board = document.getElementById('board');
 const $header = document.querySelector('header');
 
@@ -545,43 +543,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === "b" || e.key === "B") { state.showNumbers = !state.showNumbers; draw(); }
 });
 
-// Rotate board for mobile widescreen
-if ($btnRotate){
-  $btnRotate.addEventListener('click', ()=>{
-    const rotated = $board?.style.transform?.includes('rotate(90deg)');
-    if (rotated){
-      if ($board){ $board.style.transform = ''; $board.style.transformOrigin = ''; }
-    } else {
-      if ($board){ $board.style.transform = 'rotate(90deg)'; $board.style.transformOrigin = 'center center'; }
-    }
-  });
-}
-
-// Dedicated mobile landscape toggle: rotate, hide header, and expand to full viewport
-if ($btnMobileLandscape){
-  $btnMobileLandscape.addEventListener('click', ()=>{
-    const rotated = $board?.dataset.mobileRotated === '1';
-    if (rotated){
-      $board.style.transform = '';
-      $board.style.transformOrigin = '';
-      $board.dataset.mobileRotated = '0';
-      $header?.classList.remove('hidden');
-      document.documentElement.style.height = '';
-      document.body.style.height = '';
-      resizeCanvas();
-      window.scrollTo({top:0, behavior:'smooth'});
-    } else {
-      $board.style.transform = 'rotate(90deg)';
-      $board.style.transformOrigin = 'center center';
-      $board.dataset.mobileRotated = '1';
-      $header?.classList.add('hidden');
-      // Attempt to maximize usable viewport height on mobile
-      document.documentElement.style.height = '100%';
-      document.body.style.height = '100%';
-      resizeCanvas();
-    }
-  });
-}
+// rotate board features removed
 
 // Auto-hide header on scroll direction
 let lastScrollY = window.scrollY;

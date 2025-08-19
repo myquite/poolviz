@@ -52,10 +52,7 @@ canvas{width:100%; height:auto; display:block; border-radius:10px; background:va
 /* Orientation controls for small screens */
 @media (max-width: 768px){
   body{font-size:13px}
-  .mobile-only{display:inline-block}
 }
-
-.mobile-only{display:none}
 .panel{display:none}
 .row{display:flex; align-items:center; justify-content:space-between; gap:8px}
 .meta{display:grid; grid-template-columns:1fr 1fr; gap:8px}
