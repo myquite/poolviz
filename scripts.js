@@ -10,7 +10,7 @@ const FOOT_SPOT_X = TABLE_LEN - FOOT_RAIL_OFFSET;
 const CENTER_Y   = TABLE_WID/2;
 const POCKET_R   = 2.25;   // pocket radius (inches) to match drawing
 const EDGE_CLEARANCE = BALL_R + 0.25; // allow close-to-rail but never on the rail
-const MOBILE_BREAKPOINT_PX = 768; // match CSS breakpoint for mobile
+const MOBILE_BREAKPOINT_PX = 1024; // match CSS breakpoint for mobile
 
 /* ---------- Color palette for balls (approximate) ---------- */
 const COLORS = {

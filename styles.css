@@ -53,7 +53,7 @@ canvas{width:100%; height:auto; display:block; border-radius:12px; background:va
 #toolbar .controls{ gap:8px }
 
 /* Orientation controls for small screens */
-@media (max-width: 768px){
+@media (max-width: 1024px){
   body{font-size:13px}
 }
 
