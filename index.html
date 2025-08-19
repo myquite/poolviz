@@ -20,12 +20,16 @@
         <input id="seed" type="number" step="1" placeholder="auto" />
       </label>
       <button id="btnNext">New Random Break (N)</button>
+      <button id="btnRotate" class="secondary">Rotate Board</button>
+      <button id="btnMobileLandscape" class="secondary mobile-only">Landscape</button>
     </div>
   </header>
 
   <main>
     <section class="stage">
-      <canvas id="table" width="1400" height="700" aria-label="Pool table visualization"></canvas>
+      <div id="board">
+        <canvas id="table" width="1400" height="700" aria-label="Pool table visualization"></canvas>
+      </div>
     </section>
   </main>
 

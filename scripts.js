@@ -38,16 +38,23 @@ const canvas = document.getElementById('table');
 const ctx = canvas.getContext('2d', { alpha: false });
 let scale = 14; // px per inch — larger by default
 function resizeCanvas() {
-  // Keep a pleasant aspect, max width based on container
+  // Fit to available viewport while preserving aspect ratio (2:1)
   const parentW = canvas.parentElement.clientWidth - 12;
-  const targetW = Math.min(1800, Math.max(900, parentW));
-  const pxPerIn = targetW / TABLE_LEN;
+  const viewportH = window.innerHeight;
+  const headerH = $header ? $header.getBoundingClientRect().height : 0;
+  const availableH = Math.max(200, viewportH - headerH - 16);
+
+  const pxPerInWidth = parentW / TABLE_LEN;
+  const pxPerInHeight = availableH / TABLE_WID;
+  const pxPerIn = Math.min(pxPerInWidth, pxPerInHeight);
+
   scale = pxPerIn;
   canvas.width = Math.round(TABLE_LEN * scale);
   canvas.height = Math.round(TABLE_WID * scale);
   draw();
 }
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', resizeCanvas);
 
 /* ---------- Drawing helpers ---------- */
 function drawDiamond(x, y, size, color){
@@ -78,6 +85,10 @@ let state = {
 const $mode = document.getElementById('mode');
 const $seed = document.getElementById('seed');
 const $btnNext = document.getElementById('btnNext');
+const $btnRotate = document.getElementById('btnRotate');
+const $btnMobileLandscape = document.getElementById('btnMobileLandscape');
+const $board = document.getElementById('board');
+const $header = document.querySelector('header');
 
 /* ---------- Helpers ---------- */
 const toPx = (inches) => inches * scale;
@@ -534,7 +545,61 @@ document.addEventListener('keydown', (e) => {
   if (e.key === "b" || e.key === "B") { state.showNumbers = !state.showNumbers; draw(); }
 });
 
+// Rotate board for mobile widescreen
+if ($btnRotate){
+  $btnRotate.addEventListener('click', ()=>{
+    const rotated = $board?.style.transform?.includes('rotate(90deg)');
+    if (rotated){
+      if ($board){ $board.style.transform = ''; $board.style.transformOrigin = ''; }
+    } else {
+      if ($board){ $board.style.transform = 'rotate(90deg)'; $board.style.transformOrigin = 'center center'; }
+    }
+  });
+}
+
+// Dedicated mobile landscape toggle: rotate, hide header, and expand to full viewport
+if ($btnMobileLandscape){
+  $btnMobileLandscape.addEventListener('click', ()=>{
+    const rotated = $board?.dataset.mobileRotated === '1';
+    if (rotated){
+      $board.style.transform = '';
+      $board.style.transformOrigin = '';
+      $board.dataset.mobileRotated = '0';
+      $header?.classList.remove('hidden');
+      document.documentElement.style.height = '';
+      document.body.style.height = '';
+      resizeCanvas();
+      window.scrollTo({top:0, behavior:'smooth'});
+    } else {
+      $board.style.transform = 'rotate(90deg)';
+      $board.style.transformOrigin = 'center center';
+      $board.dataset.mobileRotated = '1';
+      $header?.classList.add('hidden');
+      // Attempt to maximize usable viewport height on mobile
+      document.documentElement.style.height = '100%';
+      document.body.style.height = '100%';
+      resizeCanvas();
+    }
+  });
+}
+
+// Auto-hide header on scroll direction
+let lastScrollY = window.scrollY;
+let headerHidden = false;
+window.addEventListener('scroll', ()=>{
+  const current = window.scrollY;
+  if (current > lastScrollY + 10 && !headerHidden){
+    $header?.classList.add('hidden'); headerHidden = true;
+  } else if (current < lastScrollY - 10 && headerHidden){
+    $header?.classList.remove('hidden'); headerHidden = false;
+  }
+  lastScrollY = current;
+}, { passive:true });
+
 /* ---------- Boot ---------- */
 loadFromURL();
 resizeCanvas();
 buildScenario(); // initial
+
+// Auto-hide header shortly after load to focus the table
+setTimeout(()=>{ $header?.classList.add('hidden'); }, 800);
