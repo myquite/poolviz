@@ -97,7 +97,6 @@ const $mode = document.getElementById('mode');
 const $seed = document.getElementById('seed');
 const $btnNext = document.getElementById('btnNext');
 const $board = document.getElementById('board');
-const $header = document.querySelector('header');
 
 /* ---------- Helpers ---------- */
 const toPx = (inches) => inches * scale;
@@ -655,18 +654,7 @@ document.addEventListener('keydown', (e) => {
 
 // rotate board features removed
 
-// Menu toggle (default collapsed, tab hangs down)
-if ($btnMenu){
-  const isCollapsed = ()=> $header?.classList.contains('collapsed');
-  const syncAria = ()=>{ if ($btnMenu) $btnMenu.setAttribute('aria-expanded', isCollapsed() ? 'false' : 'true'); };
-  $btnMenu.addEventListener('click', ()=>{
-    if (isCollapsed()){ $header.classList.remove('collapsed'); } else { $header?.classList.add('collapsed'); }
-    syncAria();
-    // Recompute canvas height minus header when shown/hidden
-    resizeCanvas();
-  });
-  syncAria();
-}
+// Menu toggle removed - no menu in current layout
 
 /* ---------- Boot ---------- */
 loadFromURL();
@@ -677,6 +665,4 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
   window.addEventListener('DOMContentLoaded', () => requestAnimationFrame(init));
 }
 
-// Ensure header starts collapsed and aria reflects state
-if ($header) $header.classList.add('collapsed');
-if ($btnMenu) $btnMenu.setAttribute('aria-expanded','false');
+// Header state management removed - no header in current layout
